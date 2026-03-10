@@ -1,4 +1,4 @@
-DROP DATABASE IF EXISTS Reservation;
+
 CREATE DATABASE Reservation;
 USE Reservation;
 
