@@ -1,0 +1,161 @@
+DROP DATABASE IF EXISTS Reservation;
+CREATE DATABASE Reservation;
+USE Reservation;
+
+CREATE TABLE Vendor (
+   vendor_id VARCHAR(10),
+   vendor_name VARCHAR(50),
+   phone_vnum VARCHAR(10),
+   PRIMARY KEY (vendor_id)
+);
+CREATE TABLE Booth (
+   booth_id VARCHAR(10),
+   booth_size VARCHAR(50),
+   booth_rent INT,
+   PRIMARY KEY (booth_id)
+);
+CREATE TABLE Staff (
+   staff_id VARCHAR(10),
+   staff_name VARCHAR(50),
+   position VARCHAR(50),
+   phone_snum VARCHAR(10),
+   PRIMARY KEY(staff_id)
+);
+CREATE TABLE Reservation (
+   reservation_id VARCHAR(10),
+   vendor_id VARCHAR(10),
+   reservation_date DATE,
+   booth_id VARCHAR(10),
+   FOREIGN KEY (vendor_id) REFERENCES Vendor(vendor_id),
+   FOREIGN KEY (booth_id) REFERENCES Booth(booth_id),
+   PRIMARY KEY(reservation_id)
+);
+CREATE TABLE Confirmation (
+   confirm_id VARCHAR(10),
+   drawlot_date DATE,
+   drawlot_location VARCHAR(100),
+   vendor_id VARCHAR(10),
+	FOREIGN KEY (vendor_id) REFERENCES Vendor(vendor_id),
+    PRIMARY KEY (confirm_id)
+    
+);
+CREATE TABLE Inspection (
+   inspection_id VARCHAR(10),
+   reservation_id VARCHAR(10),
+   confirm_id VARCHAR(10),
+   staff_id VARCHAR(10),
+   inspection_status ENUM('Pass','Incorrect'),
+   FOREIGN KEY (confirm_id) REFERENCES Confirmation(confirm_id),
+   FOREIGN KEY (reservation_id) REFERENCES Reservation(reservation_id),
+   FOREIGN KEY (staff_id) REFERENCES Staff(staff_id),
+   PRIMARY KEY (inspection_id)
+);
+CREATE TABLE Payment (
+   payment_id VARCHAR(10),
+   confirm_id VARCHAR(10),
+   payment_status ENUM('Deposit paid','Payment made'),
+	FOREIGN KEY (confirm_id) REFERENCES Confirmation(confirm_id),
+    PRIMARY KEY (payment_id)
+);
+
+INSERT INTO Vendor VALUES ('B101','ปริณดา เสนา','0925972953');
+INSERT INTO Vendor VALUES ('B102','วิภาดา ทับเปีย','0996100359');
+INSERT INTO Vendor VALUES ('B103','อภิณัฐชญา หวังแก้ว','0801631113');
+INSERT INTO Vendor VALUES ('B104','ณภัทร วิลัยกรวด','0992101428');
+INSERT INTO Vendor VALUES ('B105','กันต์พิมุกข์ ภูวกูล','0962354210');
+
+INSERT INTO Booth VALUES ('CA001','16 ตารางเมตร',1500);
+INSERT INTO Booth VALUES ('CA002','16  ตารางเมตร ',1500);
+INSERT INTO Booth VALUES ('CA003','24  ตารางเมตร',1800);
+INSERT INTO Booth VALUES ('CA004','32   ตารางเมตร',2000);
+INSERT INTO Booth VALUES ('CA005','20  ตารางเมตร',2300);
+
+INSERT INTO Staff VALUES ('M1010','กฤตพล เสงี่ยมงาม','admin','0849073039');
+INSERT INTO Staff VALUES ('M1020','กฤตพล เสงี่ยมงาม','admin','0838807626');
+INSERT INTO Staff VALUES ('M1030','จามีกร เขียวเซน','admin','0806712931');
+INSERT INTO Staff VALUES ('M1040','ภีมวัจน์ เวียงอินจันทร์','admin','0967481219');
+INSERT INTO Staff VALUES ('M1050','นรารักษ์ นวลคำ','admin','0896170421');
+
+INSERT INTO Reservation VALUES ('A101','B101','2026-01-25','CA001');
+INSERT INTO Reservation VALUES ('A102','B102','2026-01-25','CA002');
+INSERT INTO Reservation VALUES ('A103','B103','2026-01-27','CA003');
+INSERT INTO Reservation VALUES ('A104','B104','2026-01-28','CA004');
+INSERT INTO Reservation VALUES ('A105','B105','2026-02-01','CA005');
+
+INSERT INTO Confirmation VALUES ('CF901','2026-05-01','SC-9','B101');
+INSERT INTO Confirmation VALUES ('CF902','2026-05-01','SC-9','B102');
+INSERT INTO Confirmation VALUES ('CF903','2026-05-01','SC-9','B103');
+INSERT INTO Confirmation VALUES ('CF904','2026-05-02','SC-9','B104');
+INSERT INTO Confirmation VALUES ('CF905','2026-05-03','SC-9','B105');
+
+INSERT INTO Inspection VALUES ('CK1011','A101','CF901','M1010','Pass');
+INSERT INTO Inspection VALUES ('CK1012','A102','CF902','M1020','Pass');
+INSERT INTO Inspection VALUES ('CK1013','A103','CF903','M1010','Pass');
+INSERT INTO Inspection VALUES ('CK1014','A104','CF904','M1010','Incorrect');
+INSERT INTO Inspection VALUES ('CK1015','A105','CF905','M1030','Pass');
+
+INSERT INTO Payment VALUES ('BI1011','CF901','Deposit paid');
+INSERT INTO Payment VALUES ('BI1012','CF902','Payment made');
+INSERT INTO Payment VALUES ('BI1013','CF903','Payment made');
+INSERT INTO Payment VALUES ('BI1015','CF905','Payment made');
+
+SELECT * FROM Vendor;
+SELECT * FROM Booth;
+SELECT Vendor.vendor_name, Booth.booth_id, Booth.booth_rent
+FROM Reservation
+JOIN Vendor ON Reservation.vendor_id = Vendor.vendor_id
+JOIN Booth ON Reservation.booth_id = Booth.booth_id
+WHERE Booth.booth_rent > 1500;
+SELECT * 
+FROM Booth
+WHERE booth_rent = (
+    SELECT MIN(booth_rent) 
+    FROM Booth
+);
+SELECT Vendor.vendor_name
+FROM Vendor
+JOIN Confirmation ON Vendor.vendor_id = Confirmation.vendor_id
+LEFT JOIN Payment ON Confirmation.confirm_id = Payment.confirm_id
+WHERE Payment.payment_status = 'Deposit paid'
+OR Payment.payment_status IS NULL;
+SELECT Vendor.vendor_name, Payment.payment_status
+FROM Vendor
+JOIN Confirmation ON Vendor.vendor_id = Confirmation.vendor_id
+JOIN Payment ON Confirmation.confirm_id = Payment.confirm_id
+WHERE Payment.payment_status = 'Payment made'
+
+UNION
+
+SELECT 'Total Paid', COUNT(*)
+FROM Payment
+WHERE payment_status = 'Payment made';
+SELECT booth_id
+FROM Reservation
+
+UNION
+
+SELECT CONCAT('Total Reserved: ', COUNT(booth_id))
+FROM Reservation;
+SELECT Staff.staff_name, COUNT(Inspection.inspection_id) AS total_inspection
+FROM Staff
+JOIN Inspection ON Staff.staff_id = Inspection.staff_id
+GROUP BY Staff.staff_name;
+SELECT Confirmation.confirm_id, Vendor.vendor_name
+FROM Confirmation
+JOIN Vendor ON Confirmation.vendor_id = Vendor.vendor_id
+
+UNION
+
+SELECT 'Total Participants', COUNT(confirm_id)
+FROM Confirmation;
+SELECT Vendor.vendor_name, SUM(Booth.booth_rent) AS total_payment
+FROM Vendor
+JOIN Reservation ON Vendor.vendor_id = Reservation.vendor_id
+JOIN Booth ON Reservation.booth_id = Booth.booth_id
+JOIN Confirmation ON Vendor.vendor_id = Confirmation.vendor_id
+JOIN Payment ON Confirmation.confirm_id = Payment.confirm_id
+WHERE Payment.payment_status = 'Payment made'
+GROUP BY Vendor.vendor_name
+ORDER BY total_payment DESC;
+
+
