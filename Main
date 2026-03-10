@@ -71,8 +71,8 @@ INSERT INTO Booth VALUES ('CA004','32   ตารางเมตร',2000);
 INSERT INTO Booth VALUES ('CA005','20  ตารางเมตร',2300);
 
 INSERT INTO Staff VALUES ('M1010','กฤตพล เสงี่ยมงาม','admin','0849073039');
-INSERT INTO Staff VALUES ('M1020','กฤตพล เสงี่ยมงาม','admin','0838807626');
-INSERT INTO Staff VALUES ('M1030','จามีกร เขียวเซน','admin','0806712931');
+INSERT INTO Staff VALUES ('M1020','จามีกร เขียวเซน','admin','0838807626');
+INSERT INTO Staff VALUES ('M1030','ณัฐพงศ์ แซ่จึง,','admin','0806712931');
 INSERT INTO Staff VALUES ('M1040','ภีมวัจน์ เวียงอินจันทร์','admin','0967481219');
 INSERT INTO Staff VALUES ('M1050','นรารักษ์ นวลคำ','admin','0896170421');
 
@@ -136,10 +136,12 @@ UNION
 
 SELECT CONCAT('Total Reserved: ', COUNT(booth_id))
 FROM Reservation;
-SELECT Staff.staff_name, COUNT(Inspection.inspection_id) AS total_inspection
+SELECT Staff.staff_id, Staff.staff_name,
+COUNT(Inspection.inspection_id) AS total_inspection
 FROM Staff
-JOIN Inspection ON Staff.staff_id = Inspection.staff_id
-GROUP BY Staff.staff_name;
+INNER JOIN Inspection 
+ON Staff.staff_id = Inspection.staff_id
+GROUP BY Staff.staff_id, Staff.staff_name;
 SELECT Confirmation.confirm_id, Vendor.vendor_name
 FROM Confirmation
 JOIN Vendor ON Confirmation.vendor_id = Vendor.vendor_id
@@ -157,5 +159,3 @@ JOIN Payment ON Confirmation.confirm_id = Payment.confirm_id
 WHERE Payment.payment_status = 'Payment made'
 GROUP BY Vendor.vendor_name
 ORDER BY total_payment DESC;
-
-
